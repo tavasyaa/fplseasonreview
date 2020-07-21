@@ -11,6 +11,10 @@ export default class Home extends React.Component {
 			overall_rank: 0,
 			best_overall_rank: 0,
 			best_overall_rank_gw: 0,
+			best_points: 0,
+			best_points_gw: 0,
+			best_gameweek_rank: 0,
+			best_gameweek_rank_gw: 0,
 			pointschart: {
 				labels: [],
 				datasets: [
@@ -43,7 +47,12 @@ export default class Home extends React.Component {
 			mostcaptainedplayer: '', 
 			maxplayerpoints: 0,
 			maxplayerpointsname: '',
-			maxplayerpointsgw: 0
+			maxplayerpointsgw: 0,
+			// let's use an array to store gameweek, points, average points
+			triplecaptainstats: [],
+			benchbooststats: [],
+			freehitstats: [],
+			wildcardstats: []
 		};
 
 		this.handleChange = this.handleChange.bind(this);
@@ -109,8 +118,16 @@ export default class Home extends React.Component {
 		// getting best overall rank
 		var bestrank = 10000000
 		var bestrankgameweek = 0
+		// getting highest points for a single gameweek
+		var bestpoints = 0
+		var bestpointsgameweek = 0
+		// getting highest gameweek rank
+		var bestgwrank = 100000000
+		var bestgwrankgameweek = 0
+
 
 		for (var i = 0; i < jsonResponse2.current.length; i++){
+
 			if(jsonResponse2.current[i].overall_rank < bestrank){
 				bestrank = jsonResponse2.current[i].overall_rank
 				bestrankgameweek = i+1
@@ -118,9 +135,28 @@ export default class Home extends React.Component {
 					bestrankgameweek = bestrankgameweek - 9
 				}
 			}
+
+			if(jsonResponse2.current[i].points > bestpoints){
+				bestpoints = jsonResponse2.current[i].points
+				bestpointsgameweek = i+1
+				if (bestpointsgameweek > 30){
+					bestpointsgameweek = bestpointsgameweek - 9
+				}
+			}
+			
+			if(i < 29 || i > 37){
+				if(jsonResponse2.current[i].rank < bestgwrank){
+					bestgwrank = jsonResponse2.current[i].rank
+					bestgwrankgameweek = i+1
+					if (bestgwrankgameweek > 30){
+						bestgwrankgameweek = bestgwrankgameweek - 9
+					}
+				}
+			}
 		}
 
-		this.setState({best_overall_rank: bestrank, best_overall_rank_gw: bestrankgameweek})
+		this.setState({best_overall_rank: bestrank, best_overall_rank_gw: bestrankgameweek, best_points: bestpoints, 
+			best_points_gw: bestpointsgameweek, best_gameweek_rank: bestgwrank,best_gameweek_rank_gw: bestgwrankgameweek})
 
 		// getting points and rank data from previous and current seasons for the graphs
 		var pointshistory = []
@@ -150,11 +186,11 @@ export default class Home extends React.Component {
 
 		// this loop sucks, draw this out and see if you can figure a way better than a triple loop :(
 		for (var k = 1; k < 47; k++){
-			if (k < 30 || k > 38){
+			if (k < 29 || k > 37){
 				const response3 = await fetch('https://fantasy.premierleague.com/api/entry/' + this.state.id + '/event/' + k + '/picks/', 
 					{method: 'GET'})
 				const jsonResponse3 = await response3.json()
-
+				// crashes when you haven't played the whole season, Soli is missing a GW
 				for (var l = 0; l < jsonResponse3.picks.length; l++){
 					if (jsonResponse3.picks[l].multiplier != 0){
 						// append the element id into the picks array
@@ -183,6 +219,7 @@ export default class Home extends React.Component {
 		// getting the player w max points in one gw
 		this.setState({maxplayerpoints:Math.max(...points)})
 		var maxpointsplayerid = picks[this.indexOfMax(points)]
+		this.setState({maxplayerpointsgw: gameweeks[this.indexOfMax(points)]})
 
 
 		// getting the names from the IDs
@@ -219,9 +256,13 @@ export default class Home extends React.Component {
 		else {
 			return(
 				<div>
+					<h3> Overview </h3>
 					Total points: {this.state.total_points}<br/>
 					Overall Rank: {this.state.overall_rank}<br/>
 					Best Overall Rank: {this.state.best_overall_rank}, obtained in gameweek {this.state.best_overall_rank_gw} <br />
+					Best points in one GW: {this.state.best_points}, obtained in gameweek {this.state.best_points_gw} <br />
+					Highest gameweek rank: {this.state.best_gameweek_rank}, obtained in gameweek {this.state.best_gameweek_rank_gw} <br />
+					<h3> History </h3>
 			        <Line data={this.state.pointschart}
 						options={{
 							title:{
@@ -244,9 +285,15 @@ export default class Home extends React.Component {
 							display: false						
 							}
 					}}/>
+					<h3> Player picks </h3>
 					The player with the most appearances was: {this.state.mostpickedplayer}<br />
 					Most frequently captained: {this.state.mostcaptainedplayer}<br />
-					Maximum points by one player: {this.state.maxplayerpoints}, by {this.state.maxplayerpointsname} in gameweek
+					Maximum points by one player: {this.state.maxplayerpoints}, by {this.state.maxplayerpointsname} in gameweek {this.state.maxplayerpointsgw}
+					<h3> Chips </h3>
+					You used your wildcard in gameweek , and got points, more than average <br />
+					You used your free hit in gameweek , and got points, more than average <br />
+					You used your bench boost in gameweek , and got points, more than average <br />
+
 
 				</div>
 			);
