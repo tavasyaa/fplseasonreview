@@ -1,5 +1,5 @@
 import React from 'react';
-import {Line} from 'react-chartjs-2';
+import {Line, Doughnut} from 'react-chartjs-2';
 
 export default class Home extends React.Component {
 
@@ -9,12 +9,9 @@ export default class Home extends React.Component {
 			total_points: 0, 
 			id: null,
 			overall_rank: 0,
-			best_overall_rank: 0,
-			best_overall_rank_gw: 0,
-			best_points: 0,
-			best_points_gw: 0,
-			best_gameweek_rank: 0,
-			best_gameweek_rank_gw: 0,
+			best_overall_rank: 0, best_overall_rank_gw: 0,
+			best_points: 0, best_points_gw: 0,
+			best_gameweek_rank: 0, best_gameweek_rank_gw: 0,
 			pointschart: {
 				labels: [],
 				datasets: [
@@ -43,16 +40,26 @@ export default class Home extends React.Component {
 					}
 				]
 			},
-			mostpickedplayer: '',
-			mostcaptainedplayer: '', 
-			maxplayerpoints: 0,
-			maxplayerpointsname: '',
-			maxplayerpointsgw: 0,
+			mostpickedplayer: '', mostpickedtimes: 0,
+			mostcaptainedplayer: '', captainedtimes: 0,
+			maxplayerpoints: 0, maxplayerpointsname: '', maxplayerpointsgw: 0,
 			// let's use an array to store gameweek, points, average points
 			triplecaptainstats: [],
-			benchbooststats: [],
-			freehitstats: [],
-			wildcardstats: []
+			benchboostgw: 0,
+			freehitgw: 0,
+			triplecapgw: 0,
+			wildcardstats: [],
+			piechart: {
+				labels: ['GK', 'DEF', 'MID', 'ST'],
+				datasets: [
+					{
+						label: 'Points from Positions',
+						data: [],
+						backgroundColor: ['Red', 'Blue', 'Green', 'Yellow'], 
+						hoverBackgroundColor: ['Red', 'Blue', 'Green', 'Yellow']
+					}
+				]
+			}
 		};
 
 		this.handleChange = this.handleChange.bind(this);
@@ -96,6 +103,15 @@ export default class Home extends React.Component {
   			m = 0;
 		}
 		return item
+	}
+
+	countInArray(arr, item) {
+		var count = 0;
+		for(var i = 0; i < arr.length; ++i){
+    		if(arr[i] === item)
+       	 count++;
+		}
+		return count
 	}
 
 	// fetching data, fix CORS without the browser hacky approach
@@ -176,15 +192,20 @@ export default class Home extends React.Component {
 		this.state.pointschart.datasets[0].data = pointshistory
 		this.state.rankchart.datasets[0].data = rankhistory
 
-		// player and captain picks now
+		// player and captain picks now, these are all aligned by index
 		var picks = []
-		var captains = []
-		// use the following two to get points, ciao for now!
+		var positions = []
 		var gameweeks = []
 		var multipliers = []
 		var points = []
 
+		var captains = []
+
+		var gkpoints = 0, defpoints = 0, midpoints = 0, fwdpoints = 0
+
+
 		// this loop sucks, draw this out and see if you can figure a way better than a triple loop :(
+		// how the fuck are we missing 44 points?????
 		for (var k = 1; k < 47; k++){
 			if (k < 29 || k > 37){
 				const response3 = await fetch('https://fantasy.premierleague.com/api/entry/' + this.state.id + '/event/' + k + '/picks/', 
@@ -192,7 +213,7 @@ export default class Home extends React.Component {
 				const jsonResponse3 = await response3.json()
 				// crashes when you haven't played the whole season, Soli is missing a GW
 				for (var l = 0; l < jsonResponse3.picks.length; l++){
-					if (jsonResponse3.picks[l].multiplier != 0){
+					if (jsonResponse3.picks[l].multiplier !== 0){
 						// append the element id into the picks array
 						picks.push(jsonResponse3.picks[l].element)
 						multipliers.push(jsonResponse3.picks[l].multiplier)
@@ -203,21 +224,50 @@ export default class Home extends React.Component {
 
 						// updating points, but this takes way too long
 						points.push(jsonResponse5.elements.find(o => o.id === jsonResponse3.picks[l].element).stats.total_points*jsonResponse3.picks[l].multiplier)
+						positions.push(jsonResponse4.elements.find(o => o.id === jsonResponse3.picks[l].element).element_type)
+
+						if (jsonResponse4.elements.find(o => o.id === jsonResponse3.picks[l].element).element_type === 1){
+							gkpoints = gkpoints + jsonResponse5.elements.find(o => o.id === jsonResponse3.picks[l].element).stats.total_points*jsonResponse3.picks[l].multiplier
+						} else if(jsonResponse4.elements.find(o => o.id === jsonResponse3.picks[l].element).element_type === 2) {
+							defpoints = defpoints + jsonResponse5.elements.find(o => o.id === jsonResponse3.picks[l].element).stats.total_points*jsonResponse3.picks[l].multiplier
+						} else if(jsonResponse4.elements.find(o => o.id === jsonResponse3.picks[l].element).element_type === 3) {
+							midpoints = midpoints + jsonResponse5.elements.find(o => o.id === jsonResponse3.picks[l].element).stats.total_points*jsonResponse3.picks[l].multiplier
+						} else {
+							fwdpoints = fwdpoints + jsonResponse5.elements.find(o => o.id === jsonResponse3.picks[l].element).stats.total_points*jsonResponse3.picks[l].multiplier
+						}
+
 					}
 
-					if (jsonResponse3.picks[l].is_captain == true){
+					if (jsonResponse3.picks[l].is_captain === true){
 						captains.push(jsonResponse3.picks[l].element)
 					}
 				}
 			}
 		}
 
+		console.log(gkpoints, defpoints, midpoints, fwdpoints)
+		var sum = 0;
+		for(var s = 0; s < points.length; s++){
+			sum = points[s] + sum;
+		}
+		console.log(sum)
+		console.log(points)
+		console.log(gameweeks)
+		this.state.piechart.datasets[0].data.push(gkpoints)
+		this.state.piechart.datasets[0].data.push(defpoints)
+		this.state.piechart.datasets[0].data.push(midpoints)
+		this.state.piechart.datasets[0].data.push(fwdpoints)
+
 		// these are still in ID form, a number
 		var mfcaptainid = this.mostFrequentElement(captains)
+		// how many times was he captained?
+		var mfcaptainnumber = this.countInArray(captains, mfcaptainid)
 		var mfpickid = this.mostFrequentElement(picks)
+		// how many appearances did this dude make?
+		var mfpicknumber = this.countInArray(picks, mfpickid)
 
 		// getting the player w max points in one gw
-		this.setState({maxplayerpoints:Math.max(...points)})
+		this.setState({maxplayerpoints:Math.max(...points), mostpickedtimes: mfpicknumber, captainedtimes: mfcaptainnumber})
 		var maxpointsplayerid = picks[this.indexOfMax(points)]
 		this.setState({maxplayerpointsgw: gameweeks[this.indexOfMax(points)]})
 
@@ -286,14 +336,15 @@ export default class Home extends React.Component {
 							}
 					}}/>
 					<h3> Player picks </h3>
-					The player with the most appearances was: {this.state.mostpickedplayer}<br />
-					Most frequently captained: {this.state.mostcaptainedplayer}<br />
+					The player with the most appearances was: {this.state.mostpickedplayer}, with {this.state.mostpickedtimes} appearances <br />
+					Most frequently captained: {this.state.mostcaptainedplayer}, {this.state.captainedtimes} times <br />
 					Maximum points by one player: {this.state.maxplayerpoints}, by {this.state.maxplayerpointsname} in gameweek {this.state.maxplayerpointsgw}
+					<Doughnut data={this.state.piechart} />
+
 					<h3> Chips </h3>
 					You used your wildcard in gameweek , and got points, more than average <br />
 					You used your free hit in gameweek , and got points, more than average <br />
 					You used your bench boost in gameweek , and got points, more than average <br />
-
 
 				</div>
 			);
