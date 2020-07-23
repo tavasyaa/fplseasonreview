@@ -12,6 +12,7 @@ export default class Home extends React.Component {
 			best_overall_rank: 0, best_overall_rank_gw: 0,
 			best_points: 0, best_points_gw: 0,
 			best_gameweek_rank: 0, best_gameweek_rank_gw: 0,
+			most_bench_points: 0, most_bench_points_gw: 0,
 			pointschart: {
 				labels: [],
 				datasets: [
@@ -45,9 +46,9 @@ export default class Home extends React.Component {
 			maxplayerpoints: 0, maxplayerpointsname: '', maxplayerpointsgw: 0,
 			// let's use an array to store gameweek, points, average points
 			triplecaptainstats: [],
-			benchboostgw: 0,
-			freehitgw: 0,
-			triplecapgw: 0,
+			benchboostgw: 0, benchboostpoints: 0,
+			freehitgw: 0, freehitpoints: 0,
+			triplecapgw: 0, triplecappoints: 0,
 			wildcardstats: [],
 			doughnut: {
 				labels: ['GK', 'DEF', 'MID', 'ST'],
@@ -137,6 +138,8 @@ export default class Home extends React.Component {
 		var bestpoints = 0, bestpointsgameweek = 0
 		// getting highest gameweek rank
 		var bestgwrank = 100000000, bestgwrankgameweek = 0
+		// most bench points, rip
+		var mostbenchpoints = 0, mostbenchpointsgw = 0
 
 
 		for (var i = 0; i < jsonhistorydata.current.length; i++){
@@ -155,9 +158,18 @@ export default class Home extends React.Component {
 				if (bestpointsgameweek > 30){
 					bestpointsgameweek = bestpointsgameweek - 9
 				}
+
+			}
+
+			if(jsonhistorydata.current[i].points_on_bench > mostbenchpoints){
+				mostbenchpoints = jsonhistorydata.current[i].points_on_bench
+				mostbenchpointsgw = i+1
+				if (mostbenchpointsgw > 30){
+					mostbenchpointsgw = mostbenchpointsgw - 9
+				}
 			}
 			
-			if(i < 30 || i > 38){
+			if(i < 29 || i > 37){
 				if(jsonhistorydata.current[i].rank < bestgwrank){
 					bestgwrank = jsonhistorydata.current[i].rank
 					bestgwrankgameweek = i+1
@@ -169,7 +181,8 @@ export default class Home extends React.Component {
 		}
 
 		this.setState({best_overall_rank: bestrank, best_overall_rank_gw: bestrankgameweek, best_points: bestpoints, 
-			best_points_gw: bestpointsgameweek, best_gameweek_rank: bestgwrank,best_gameweek_rank_gw: bestgwrankgameweek})
+			best_points_gw: bestpointsgameweek, best_gameweek_rank: bestgwrank,best_gameweek_rank_gw: bestgwrankgameweek, 
+			most_bench_points: mostbenchpoints, most_bench_points_gw: mostbenchpointsgw})
 
 		// getting points and rank data from previous and current seasons for the graphs
 		var pointshistory = []
@@ -260,7 +273,6 @@ export default class Home extends React.Component {
 		var maxpointsplayerid = picks[this.indexOfMax(points)]
 		this.setState({maxplayerpointsgw: gameweeks[this.indexOfMax(points)]})
 
-
 		// getting the names from the IDs
 		for (var m = 0; m < jsonbootstrapdata.elements.length; m++){
 			if (mfcaptainid === jsonbootstrapdata.elements[m].id){
@@ -275,6 +287,23 @@ export default class Home extends React.Component {
 				this.setState({maxplayerpointsname: jsonbootstrapdata.elements[m].web_name})
 			}
 		}
+
+		// chips
+		var wildcardgw = []
+		var triplecapgw = 0, benchboostgw = 0, freehitgw = 0
+
+		for(var n = 0; n < jsonhistorydata.chips.length; n++){
+			if(jsonhistorydata.chips[n].name === "bboost"){
+				benchboostgw = jsonhistorydata.chips[n].event
+			} else if(jsonhistorydata.chips[n].name === "3xc") {
+				triplecapgw = jsonhistorydata.chips[n].event
+			} else if(jsonhistorydata.chips[n].name === "freehit"){
+				freehitgw = jsonhistorydata.chips[n].event
+			} else {
+				wildcardgw.push(jsonhistorydata.chips[n].event)
+			}
+		}
+		console.log(benchboostgw, triplecapgw, freehitgw, wildcardgw)
 	}
 
 	render() {
@@ -301,6 +330,7 @@ export default class Home extends React.Component {
 					Best Overall Rank: {this.state.best_overall_rank}, obtained in gameweek {this.state.best_overall_rank_gw} <br />
 					Best points in one GW: {this.state.best_points}, obtained in gameweek {this.state.best_points_gw} <br />
 					Highest gameweek rank: {this.state.best_gameweek_rank}, obtained in gameweek {this.state.best_gameweek_rank_gw} <br />
+					You got the most points on your bench in gameweek {this.state.most_bench_points_gw}, a whopping {this.state.most_bench_points} points. Unlucky! <br />
 					<h3> History </h3>
 			        <Line data={this.state.pointschart}
 						options={{
@@ -335,6 +365,7 @@ export default class Home extends React.Component {
 					You used your wildcard in gameweek , and got points, more than average <br />
 					You used your free hit in gameweek , and got points, more than average <br />
 					You used your bench boost in gameweek , and got points, more than average <br />
+					You used your triple captain in gameweek , and got points, more than average <br />
 
 				</div>
 			);
