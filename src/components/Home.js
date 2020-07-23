@@ -115,14 +115,13 @@ export default class Home extends React.Component {
 		return count
 	}
 
-	// fetching data, fix CORS without the browser hacky approach
+	// fetching data
 	getData = async() => {
 
 		// getting the current data
-		var proxyurl = 'http://localhost:8080/'
+		var proxyurl = 'https://corsforfplretro.herokuapp.com/'
 		const response1 = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/entry/' + this.state.id + '/event/46/picks/', {method: 'GET'})
 		const jsonResponse1 = await response1.json()
-		console.log('we got here')
 
 		// getting the history data
 		const historydata = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/entry/' + this.state.id + '/history/', {method:'GET'})
@@ -143,7 +142,6 @@ export default class Home extends React.Component {
 		// most bench points, rip
 		var mostbenchpoints = 0, mostbenchpointsgw = 0
 
-		console.log('here')
 		for (var i = 0; i < jsonhistorydata.current.length; i++){
 
 			if(jsonhistorydata.current[i].overall_rank < bestrank){
@@ -214,7 +212,6 @@ export default class Home extends React.Component {
 		var captains = []
 
 		var gkpoints = 0, defpoints = 0, midpoints = 0, fwdpoints = 0
-		console.log('before the worst loop')
 
 		// this loop sucks, draw this out and see if you can figure a way better than a triple loop :(
 		// earlier we had a problem with k so we missed gw 29 but that's fixed now. disparity between total points and this
