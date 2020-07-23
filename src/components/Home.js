@@ -119,15 +119,17 @@ export default class Home extends React.Component {
 	getData = async() => {
 
 		// getting the current data
-		const response1 = await fetch('https://fantasy.premierleague.com/api/entry/' + this.state.id + '/event/46/picks/', {method: 'GET'})
+		var proxyurl = 'http://localhost:8080/'
+		const response1 = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/entry/' + this.state.id + '/event/46/picks/', {method: 'GET'})
 		const jsonResponse1 = await response1.json()
+		console.log('we got here')
 
 		// getting the history data
-		const historydata = await fetch('https://fantasy.premierleague.com/api/entry/' + this.state.id + '/history/', {method:'GET'})
+		const historydata = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/entry/' + this.state.id + '/history/', {method:'GET'})
 		const jsonhistorydata = await historydata.json()
 
 		// bootstrap static, this is the big store of info
-		const bootstrapdata = await fetch('https://fantasy.premierleague.com/api/bootstrap-static/', {method: 'GET'})
+		const bootstrapdata = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/bootstrap-static/', {method: 'GET'})
 		const jsonbootstrapdata = await bootstrapdata.json()
 
 		this.setState({total_points: jsonResponse1.entry_history.total_points, overall_rank: jsonResponse1.entry_history.overall_rank})
@@ -141,7 +143,7 @@ export default class Home extends React.Component {
 		// most bench points, rip
 		var mostbenchpoints = 0, mostbenchpointsgw = 0
 
-
+		console.log('here')
 		for (var i = 0; i < jsonhistorydata.current.length; i++){
 
 			if(jsonhistorydata.current[i].overall_rank < bestrank){
@@ -212,15 +214,16 @@ export default class Home extends React.Component {
 		var captains = []
 
 		var gkpoints = 0, defpoints = 0, midpoints = 0, fwdpoints = 0
-
+		console.log('before the worst loop')
 
 		// this loop sucks, draw this out and see if you can figure a way better than a triple loop :(
 		// earlier we had a problem with k so we missed gw 29 but that's fixed now. disparity between total points and this
 		// is because of deducted points for extra transfers
 		// we still have a one point discrepancy, but i think that's because of update lag, check later
+		// you probably have to update this part to get gameweek 38
 		for (var k = 1; k < 47; k++){
 			if (k < 30 || k > 38){
-				const response3 = await fetch('https://fantasy.premierleague.com/api/entry/' + this.state.id + '/event/' + k + '/picks/', 
+				const response3 = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/entry/' + this.state.id + '/event/' + k + '/picks/', 
 					{method: 'GET'})
 				const jsonResponse3 = await response3.json()
 				// crashes when you haven't played the whole season, Soli is missing a GW
@@ -231,7 +234,7 @@ export default class Home extends React.Component {
 						multipliers.push(jsonResponse3.picks[l].multiplier)
 						gameweeks.push(jsonResponse3.entry_history.event)
 
-						const response5 = await fetch('https://fantasy.premierleague.com/api/event/' + jsonResponse3.entry_history.event + '/live/', {method: 'GET'})
+						const response5 = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/event/' + jsonResponse3.entry_history.event + '/live/', {method: 'GET'})
 						const jsonResponse5 = await response5.json()
 
 						// updating points, but this takes way too long
@@ -256,7 +259,7 @@ export default class Home extends React.Component {
 				}
 			}
 		}
-
+		console.log('we amade it out')
 		// updating the donut
 		this.state.doughnut.datasets[0].data.push(gkpoints, defpoints, midpoints, fwdpoints)
 
