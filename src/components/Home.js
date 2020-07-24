@@ -13,11 +13,20 @@ export default class Home extends React.Component {
 			best_points: 0, best_points_gw: 0,
 			best_gameweek_rank: 0, best_gameweek_rank_gw: 0,
 			most_bench_points: 0, most_bench_points_gw: 0,
-			pointschart: {
+			currentpointschart: {
 				labels: [],
 				datasets: [
 					{
-						label: 'Points',
+						label: 'Team Points',
+						fill: false,
+						lineTension: 0,
+						backgroundColor: 'rgba(246,8,8,1)',
+						borderColor: 'rgba(246,8,8,1)',
+						borderWidth: 2,
+						data: []
+					},
+					{
+						label: 'GW Average',
 						fill: false,
 						lineTension: 0,
 						backgroundColor: 'rgba(75,192,192,1)',
@@ -27,14 +36,42 @@ export default class Home extends React.Component {
 					}
 				]
 			},
-			rankchart: {
+			currentrankchart: {
 				labels: [],
 				datasets: [
 					{
 						label: 'Rank',
 						fill: false,
 						lineTension: 0,
-						backgroundColor: 'rgba(75,192,192,1)',
+						backgroundColor: 'rgba(0,0,0,1)',
+						borderColor: 'rgba(0,0,0,1)',
+						borderWidth: 2,
+						data: []
+					}
+				]
+			},
+			pastpointschart: {
+				labels: [],
+				datasets: [
+					{
+						label: 'Points',
+						fill: false,
+						lineTension: 0,
+						backgroundColor: 'rgba(3, 61, 22,1)',
+						borderColor: 'rgba(3, 61, 22, 1)',
+						borderWidth: 2,
+						data: []
+					}
+				]
+			},
+			pastrankchart: {
+				labels: [],
+				datasets: [
+					{
+						label: 'Rank',
+						fill: false,
+						lineTension: 0,
+						backgroundColor: 'rgba(0,0,0,1)',
 						borderColor: 'rgba(0,0,0,1)',
 						borderWidth: 2,
 						data: []
@@ -46,10 +83,10 @@ export default class Home extends React.Component {
 			maxplayerpoints: 0, maxplayerpointsname: '', maxplayerpointsgw: 0,
 			// let's use an array to store gameweek, points, average points
 			triplecaptainstats: [],
-			benchboostgw: 0, benchboostpoints: 0,
-			freehitgw: 0, freehitpoints: 0,
-			triplecapgw: 0, triplecappoints: 0,
-			wildcardstats: [],
+			benchboostgw: 0, benchboostpoints: 0, benchboostavg: 0,
+			freehitgw: 0, freehitpoints: 0, freehitavg: 0,
+			triplecapgw: 0, triplecappoints: 0, triplecapavg: 0,
+			wildcardgw: [], wildcardpoints: [],
 			doughnut: {
 				labels: ['GK', 'DEF', 'MID', 'ST'],
 				datasets: [
@@ -84,7 +121,6 @@ export default class Home extends React.Component {
 				max = arr[i];
 			}
 		}
-
     	return maxIndex;
 	}
 
@@ -115,13 +151,14 @@ export default class Home extends React.Component {
 		return count
 	}
 
-	// fetching data
+	// fetching data, fix the localhost thing to use the heroku app when you launch this
 	getData = async() => {
 
 		// getting the current data
-		var proxyurl = 'https://corsforfplretro.herokuapp.com/'
+		var proxyurl = 'http://localhost:8080/'
 		const response1 = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/entry/' + this.state.id + '/event/46/picks/', {method: 'GET'})
 		const jsonResponse1 = await response1.json()
+		this.setState({total_points: jsonResponse1.entry_history.total_points, overall_rank: jsonResponse1.entry_history.overall_rank})
 
 		// getting the history data
 		const historydata = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/entry/' + this.state.id + '/history/', {method:'GET'})
@@ -131,7 +168,6 @@ export default class Home extends React.Component {
 		const bootstrapdata = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/bootstrap-static/', {method: 'GET'})
 		const jsonbootstrapdata = await bootstrapdata.json()
 
-		this.setState({total_points: jsonResponse1.entry_history.total_points, overall_rank: jsonResponse1.entry_history.overall_rank})
 
 		// getting best overall rank
 		var bestrank = 10000000, bestrankgameweek = 0
@@ -142,7 +178,36 @@ export default class Home extends React.Component {
 		// most bench points, rip
 		var mostbenchpoints = 0, mostbenchpointsgw = 0
 
+		// chips
+		var wildcardgw = [], wildcardpoints = []
+		var triplecapgw = 0, benchboostgw = 0, freehitgw = 0
+		var triplecappoints = 0, benchboostpoints = 0, freehitpoints = 0
+
+		for(var n = 0; n < jsonhistorydata.chips.length; n++){
+			if(jsonhistorydata.chips[n].name === "bboost"){
+				benchboostgw = jsonhistorydata.chips[n].event
+			} else if(jsonhistorydata.chips[n].name === "3xc") {
+				triplecapgw = jsonhistorydata.chips[n].event
+			} else if(jsonhistorydata.chips[n].name === "freehit"){
+				freehitgw = jsonhistorydata.chips[n].event
+			} else {
+				wildcardgw.push(jsonhistorydata.chips[n].event)
+			}
+		}
+
+		var currentpointshistory = [], currentavgpoints = [], currentrankhistory = []
+
 		for (var i = 0; i < jsonhistorydata.current.length; i++){
+
+			if(jsonhistorydata.current[i].event === triplecapgw){
+				triplecappoints = jsonhistorydata.current[i].points
+			} else if(jsonhistorydata.current[i].event === benchboostgw){
+				benchboostpoints = jsonhistorydata.current[i].points
+			} else if(jsonhistorydata.current[i].event === freehitgw){
+				freehitpoints = jsonhistorydata.current[i].points
+			} else if (wildcardgw.includes(jsonhistorydata.current[i].event)){
+				wildcardpoints.push(jsonhistorydata.current[i].points)
+			}
 
 			if(jsonhistorydata.current[i].overall_rank < bestrank){
 				bestrank = jsonhistorydata.current[i].overall_rank
@@ -158,7 +223,6 @@ export default class Home extends React.Component {
 				if (bestpointsgameweek > 30){
 					bestpointsgameweek = bestpointsgameweek - 9
 				}
-
 			}
 
 			if(jsonhistorydata.current[i].points_on_bench > mostbenchpoints){
@@ -177,30 +241,53 @@ export default class Home extends React.Component {
 						bestgwrankgameweek = bestgwrankgameweek - 9
 					}
 				}
+
+				if(i < 29){
+					this.state.currentpointschart.labels.push(jsonhistorydata.current[i].event)
+					this.state.currentrankchart.labels.push(jsonhistorydata.current[i].event)
+				} else {
+					this.state.currentpointschart.labels.push(jsonhistorydata.current[i].event - 9)
+					this.state.currentrankchart.labels.push(jsonhistorydata.current[i].event - 9)
+				}
+				currentpointshistory.push(jsonhistorydata.current[i].points)
+				currentrankhistory.push(jsonhistorydata.current[i].rank)
 			}
 		}
 
-		this.setState({best_overall_rank: bestrank, best_overall_rank_gw: bestrankgameweek, best_points: bestpoints, 
-			best_points_gw: bestpointsgameweek, best_gameweek_rank: bestgwrank,best_gameweek_rank_gw: bestgwrankgameweek, 
-			most_bench_points: mostbenchpoints, most_bench_points_gw: mostbenchpointsgw})
+		// populating average scores, change this for final gameweek too
+		for(var b = 0; b < 46; b++){
+			if(jsonbootstrapdata.events[b].id < 30 || jsonbootstrapdata.events[b].id > 38){
+				currentavgpoints.push(jsonbootstrapdata.events[b].average_entry_score)
+			}
 
-		// getting points and rank data from previous and current seasons for the graphs
-		var pointshistory = []
-		var rankhistory = []
-
-		for (var j = 0; j < jsonhistorydata.past.length; j++){
-			pointshistory.push(jsonhistorydata.past[j].total_points)
-			rankhistory.push(jsonhistorydata.past[j].rank)
-			this.state.pointschart.labels.push(jsonhistorydata.past[j].season_name)
-			this.state.rankchart.labels.push(jsonhistorydata.past[j].season_name)
 		}
 
-		pointshistory.push(this.state.total_points)
-		rankhistory.push(this.state.overall_rank)
-		this.state.pointschart.labels.push("2019/20")
-		this.state.rankchart.labels.push("2019/20")
-		this.state.pointschart.datasets[0].data = pointshistory
-		this.state.rankchart.datasets[0].data = rankhistory
+		this.state.currentrankchart.datasets[0].data = currentrankhistory
+		this.state.currentpointschart.datasets[0].data = currentpointshistory
+		this.state.currentpointschart.datasets[1].data = currentavgpoints
+
+		this.setState({best_overall_rank: bestrank, best_overall_rank_gw: bestrankgameweek, best_points: bestpoints, 
+			best_points_gw: bestpointsgameweek, best_gameweek_rank: bestgwrank,best_gameweek_rank_gw: bestgwrankgameweek, 
+			most_bench_points: mostbenchpoints, most_bench_points_gw: mostbenchpointsgw, triplecapgw: triplecapgw, 
+			triplecappoints: triplecappoints, benchboostgw: benchboostgw, benchboostpoints: benchboostpoints, 
+			freehitgw: freehitgw, freehitpoints: freehitpoints, wildcardgw: wildcardgw, wildcardpoints: wildcardpoints})
+
+		// getting points and rank data from previous and current seasons for the graphs
+		var pastpointshistory = [], pastrankhistory = []
+
+		for (var j = 0; j < jsonhistorydata.past.length; j++){
+			pastpointshistory.push(jsonhistorydata.past[j].total_points)
+			pastrankhistory.push(jsonhistorydata.past[j].rank)
+			this.state.pastpointschart.labels.push(jsonhistorydata.past[j].season_name)
+			this.state.pastrankchart.labels.push(jsonhistorydata.past[j].season_name)
+		}
+
+		pastpointshistory.push(this.state.total_points)
+		pastrankhistory.push(this.state.overall_rank)
+		this.state.pastpointschart.labels.push("2019/20")
+		this.state.pastrankchart.labels.push("2019/20")
+		this.state.pastpointschart.datasets[0].data = pastpointshistory
+		this.state.pastrankchart.datasets[0].data = pastrankhistory
 
 		// player and captain picks now, these are all aligned by index
 		var picks = []
@@ -247,7 +334,6 @@ export default class Home extends React.Component {
 						} else {
 							fwdpoints = fwdpoints + jsonResponse5.elements.find(o => o.id === jsonResponse3.picks[l].element).stats.total_points*jsonResponse3.picks[l].multiplier
 						}
-
 					}
 
 					if (jsonResponse3.picks[l].is_captain === true){
@@ -256,7 +342,6 @@ export default class Home extends React.Component {
 				}
 			}
 		}
-		console.log('we amade it out')
 		// updating the donut
 		this.state.doughnut.datasets[0].data.push(gkpoints, defpoints, midpoints, fwdpoints)
 
@@ -287,23 +372,6 @@ export default class Home extends React.Component {
 				this.setState({maxplayerpointsname: jsonbootstrapdata.elements[m].web_name})
 			}
 		}
-
-		// chips
-		var wildcardgw = []
-		var triplecapgw = 0, benchboostgw = 0, freehitgw = 0
-
-		for(var n = 0; n < jsonhistorydata.chips.length; n++){
-			if(jsonhistorydata.chips[n].name === "bboost"){
-				benchboostgw = jsonhistorydata.chips[n].event
-			} else if(jsonhistorydata.chips[n].name === "3xc") {
-				triplecapgw = jsonhistorydata.chips[n].event
-			} else if(jsonhistorydata.chips[n].name === "freehit"){
-				freehitgw = jsonhistorydata.chips[n].event
-			} else {
-				wildcardgw.push(jsonhistorydata.chips[n].event)
-			}
-		}
-		console.log(benchboostgw, triplecapgw, freehitgw, wildcardgw)
 	}
 
 	render() {
@@ -324,49 +392,82 @@ export default class Home extends React.Component {
 		else {
 			return(
 				<div>
-					<h3> Overview </h3>
-					Total points: {this.state.total_points}<br/>
-					Overall Rank: {this.state.overall_rank}<br/>
-					Best Overall Rank: {this.state.best_overall_rank}, obtained in gameweek {this.state.best_overall_rank_gw} <br />
-					Best points in one GW: {this.state.best_points}, obtained in gameweek {this.state.best_points_gw} <br />
-					Highest gameweek rank: {this.state.best_gameweek_rank}, obtained in gameweek {this.state.best_gameweek_rank_gw} <br />
-					You got the most points on your bench in gameweek {this.state.most_bench_points_gw}, a whopping {this.state.most_bench_points} points. Unlucky! <br />
-					<h3> History </h3>
-			        <Line data={this.state.pointschart}
-						options={{
-							title:{
-								display:true,
-								text:'Points History',
-								fontSize:20
-							},
-							legend: {
-							display: false						
-							}
-					}} />
-			        <Line data={this.state.rankchart}
-						options={{
-							title:{
-								display: true,
-								text: 'Rank History',
-								fontSize: 20
-							},
-							legend: {
-							display: false						
-							}
-					}}/>
-					<h3> Player picks </h3>
-					The player with the most appearances was: {this.state.mostpickedplayer}, with {this.state.mostpickedtimes} appearances <br />
-					Most frequently captained: {this.state.mostcaptainedplayer}, {this.state.captainedtimes} times <br />
-					Maximum points by one player: {this.state.maxplayerpoints}, by {this.state.maxplayerpointsname} in gameweek {this.state.maxplayerpointsgw} <br />
-					<h3> Points by Position</h3>
-					<Doughnut data={this.state.doughnut} />
-
-					<h3> Chips </h3>
-					You used your wildcard in gameweek , and got points, more than average <br />
-					You used your free hit in gameweek , and got points, more than average <br />
-					You used your bench boost in gameweek , and got points, more than average <br />
-					You used your triple captain in gameweek , and got points, more than average <br />
-
+					<div className="overview">
+						<h3> Overview </h3>
+						Total points: {this.state.total_points}<br/>
+						Overall Rank: {this.state.overall_rank}<br/>
+						Best Overall Rank: {this.state.best_overall_rank}, obtained in gameweek {this.state.best_overall_rank_gw} <br />
+						Best points in one GW: {this.state.best_points}, obtained in gameweek {this.state.best_points_gw} <br />
+						Highest gameweek rank: {this.state.best_gameweek_rank}, obtained in gameweek {this.state.best_gameweek_rank_gw} <br />
+						You got the most points on your bench in gameweek {this.state.most_bench_points_gw}, a whopping {this.state.most_bench_points} points. Unlucky! <br />
+					</div>
+					<div className="seasonreview">
+						<h3> Season Review </h3>
+				        <Line data={this.state.currentpointschart}
+							options={{
+								title:{
+									display:true,
+									text:'Team Points vs Avg Points/Gameweek',
+									fontSize:20
+								},
+								legend: {
+								display: true						
+								}
+						}} />
+				        <Line data={this.state.currentrankchart}
+							options={{
+								title:{
+									display:true,
+									text:'Rank/Gameweek',
+									fontSize:20
+								},
+								legend: {
+								display: false						
+								}
+						}} />
+					</div>
+					<div className="seasonhistory">
+						<h3> Team History </h3>
+				        <Line data={this.state.pastpointschart}
+							options={{
+								title:{
+									display:true,
+									text:'Points/Season',
+									fontSize:20
+								},
+								legend: {
+								display: false						
+								}
+						}} />
+				        <Line data={this.state.pastrankchart}
+							options={{
+								title:{
+									display: true,
+									text: 'Rank/Season',
+									fontSize: 20
+								},
+								legend: {
+								display: false						
+								}
+						}}/>
+					</div>
+					<div className="picks">
+						<h3> Player picks </h3>
+						The player with the most appearances was: {this.state.mostpickedplayer}, with {this.state.mostpickedtimes} appearances <br />
+						Most frequently captained: {this.state.mostcaptainedplayer}, {this.state.captainedtimes} times <br />
+						Maximum points by one player: {this.state.maxplayerpoints}, by {this.state.maxplayerpointsname} in gameweek {this.state.maxplayerpointsgw} <br />
+					</div>
+					<div className="positiondonut">
+						<h3> Points by Position</h3>
+						<Doughnut data={this.state.doughnut} />
+					</div>
+					<div className="chips">
+						<h3> Chips </h3>
+						You used your wildcard in gameweek(s) {this.state.wildcardgw}, and got {this.state.wildcardpoints} points. <br />
+						You used your free hit in gameweek {this.state.freehitgw}, and got {this.state.freehitpoints} points. <br />
+						You used your bench boost in gameweek {this.state.benchboostgw}, and got {this.state.benchboostpoints} points.<br />
+						You used your triple captain in gameweek {this.state.triplecapgw}, and got {this.state.triplecappoints} points. <br />
+					</div>
 				</div>
 			);
 		}
