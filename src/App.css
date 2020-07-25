@@ -1,4 +1,8 @@
-body {
-  margin-left: 10vw;
-  margin-right: 10vw;
+.inputsection {
+  height: 100vh;
+  background-color: #00ff87;
+  display: flex;
+  justify-content: center;
+  text-align: center;
+  align-items: center;
 }

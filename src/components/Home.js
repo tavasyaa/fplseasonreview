@@ -1,5 +1,7 @@
 import React from 'react';
 import {Line, Doughnut} from 'react-chartjs-2';
+import M from 'materialize-css';
+import { Button, Card, Row, Col, TextInput } from 'react-materialize';
 
 export default class Home extends React.Component {
 
@@ -153,7 +155,7 @@ export default class Home extends React.Component {
 
 	// fetching data, fix the localhost thing to use the heroku app when you launch this
 	getData = async() => {
-
+		console.log('boom')
 		// getting the current data
 		var proxyurl = 'http://localhost:8080/'
 		const response1 = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/entry/' + this.state.id + '/event/46/picks/', {method: 'GET'})
@@ -378,13 +380,16 @@ export default class Home extends React.Component {
 		if (this.state.doughnut.datasets[0].data.length === 0){
 			return(
 				<div className="inputsection">
-					<form>
-						<label>
-							Team ID:
-							<input type="text" name={this.state.id} onChange={this.handleChange} />
-						</label>
-						<input type="button" value="Submit" onClick={this.getData}/>
-					</form>			
+					<div>
+						<form className="inputform">
+							<TextInput id="TextInput-4" label="Team ID" onChange={this.handleChange} className="textinput"/>
+	 						<Button type="button" waves="light" onClick={this.getData}>Submit</Button>				
+	  					</form>	
+	  				</div>
+	  				<div>	
+	  					You can find your team ID in the URL bar when logged into FPL and vewing the points tab.
+	  					For example, if your URL is https://fantasy.premierleague.com/entry/124374/event/46, your ID is 124374.
+					</div>
 				</div>
 			);
 		}
