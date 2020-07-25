@@ -2,12 +2,14 @@ import React from 'react';
 import {Line, Doughnut} from 'react-chartjs-2';
 import M from 'materialize-css';
 import { Button, Card, Row, Col, TextInput } from 'react-materialize';
+import BounceLoader from "react-spinners/ClipLoader";
 
 export default class Home extends React.Component {
 
 	constructor() {
 		super();
 		this.state = {
+			loading: false,
 			total_points: 0, 
 			id: null,
 			overall_rank: 0,
@@ -155,6 +157,7 @@ export default class Home extends React.Component {
 
 	// fetching data, fix the localhost thing to use the heroku app when you launch this
 	getData = async() => {
+		this.setState({loading: true})
 		console.log('boom')
 		// getting the current data
 		var proxyurl = 'http://localhost:8080/'
@@ -377,7 +380,7 @@ export default class Home extends React.Component {
 	}
 
 	render() {
-		if (this.state.doughnut.datasets[0].data.length === 0){
+		if (this.state.doughnut.datasets[0].data.length === 0 && this.state.loading == false){
 			return(
 				<div className="inputsection">
 					<div>
@@ -386,15 +389,19 @@ export default class Home extends React.Component {
 	 						<Button type="button" waves="light" onClick={this.getData}>Submit</Button>				
 	  					</form>	
 	  				</div>
-	  				<div>	
-	  					You can find your team ID in the URL bar when logged into FPL and vewing the points tab.
-	  					For example, if your URL is https://fantasy.premierleague.com/entry/124374/event/46, your ID is 124374.
-					</div>
+
+				</div>
+			);
+
+		} else if (this.state.doughnut.datasets[0].data.length === 0 && this.state.loading == true){
+			return(
+				<div className="inputsection">
+					<BounceLoader size={150} color={"#123abc"} loading={this.state.loading} />
 				</div>
 			);
 		}
 
-		else {
+		else if (this.state.doughnut.datasets[0].data.length > 0){
 			return(
 				<div>
 					<div className="overview">
