@@ -185,7 +185,7 @@ export default class Home extends React.Component {
 		this.setState({loading: true})
 		console.log('boom')
 		// getting the current data
-		var proxyurl = 'http://localhost:8080/'
+		var proxyurl = 'https://corsforfplretro.herokuapp.com/'
 		const response1 = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/entry/' + this.state.id + '/event/47/picks/', {method: 'GET'})
 		const jsonResponse1 = await response1.json()
 		this.setState({total_points: jsonResponse1.entry_history.total_points, overall_rank: jsonResponse1.entry_history.overall_rank})
@@ -469,7 +469,7 @@ export default class Home extends React.Component {
 								options={{
 									title:{
 										display:true,
-										text:'Team Points vs Avg Points/Gameweek',
+										text:'Team Points vs Avg Points/Gameweek #',
 										fontSize:20
 									},
 									legend: {
@@ -480,7 +480,7 @@ export default class Home extends React.Component {
 								options={{
 									title:{
 										display:true,
-										text:'GW Rank/GW #',
+										text:'GW Rank/Gameweek #',
 										fontSize:20
 									},
 									legend: {
@@ -491,7 +491,7 @@ export default class Home extends React.Component {
 								options={{
 									title:{
 										display:true,
-										text:'Overall Rank/GW #',
+										text:'Overall Rank/Gameweek #',
 										fontSize:20
 									},
 									legend: {
@@ -507,7 +507,7 @@ export default class Home extends React.Component {
 								options={{
 									title:{
 										display:true,
-										text:'Points/Season',
+										text:'Total Points/Season',
 										fontSize:20
 									},
 									legend: {
@@ -538,6 +538,7 @@ export default class Home extends React.Component {
 					<div className="positiondonut" id="positiondonut">
 						<div className="positiondonutcontent">
 							<h3> Points by Position</h3>
+							Hover over the chart to see the numbers!
 							<Doughnut className ="doughnut" data={this.state.doughnut} 
 								options={{
 									legend: {
