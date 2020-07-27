@@ -1,7 +1,7 @@
 import React from 'react';
 import {Line, Doughnut} from 'react-chartjs-2';
 import M from 'materialize-css';
-import { Button, Card, Row, Col, TextInput } from 'react-materialize';
+import { Button, TextInput, Navbar, NavItem, Icon, Footer } from 'react-materialize';
 import BounceLoader from "react-spinners/ClipLoader";
 
 export default class Home extends React.Component {
@@ -33,14 +33,14 @@ export default class Home extends React.Component {
 						label: 'GW Average',
 						fill: false,
 						lineTension: 0,
-						backgroundColor: 'rgba(75,192,192,1)',
+						backgroundColor: 'rgba(0,0,0,1)',
 						borderColor: 'rgba(0,0,0,1)',
 						borderWidth: 2,
 						data: []
 					}
 				]
 			},
-			currentrankchart: {
+			currentgwrankchart: {
 				labels: [],
 				datasets: [
 					{
@@ -49,6 +49,20 @@ export default class Home extends React.Component {
 						lineTension: 0,
 						backgroundColor: 'rgba(0,0,0,1)',
 						borderColor: 'rgba(0,0,0,1)',
+						borderWidth: 2,
+						data: []
+					}
+				]
+			},
+			currentoverallrankchart: {
+				labels: [],
+				datasets: [
+					{
+						label: 'Rank',
+						fill: false,
+						lineTension: 0,
+						backgroundColor: 'rgb(1,87,155)',
+						borderColor: 'rgb(1,87,155)',
 						borderWidth: 2,
 						data: []
 					}
@@ -75,8 +89,8 @@ export default class Home extends React.Component {
 						label: 'Rank',
 						fill: false,
 						lineTension: 0,
-						backgroundColor: 'rgba(0,0,0,1)',
-						borderColor: 'rgba(0,0,0,1)',
+						backgroundColor: 'rgba(246,8,8,1)',
+						borderColor: 'rgba(246,8,8,1)',
 						borderWidth: 2,
 						data: []
 					}
@@ -109,6 +123,17 @@ export default class Home extends React.Component {
 
 	handleChange(event) {
     	this.setState({id: event.target.value});
+	}
+
+	printString(arr){
+		if(arr.length === 1){
+			return arr[0]
+		} else if (arr.length === 0) {
+			return 'NA'
+		} else {
+			var output = arr[0].toString() + ' and ' + arr[1].toString()
+			return output
+		}
 	}
 
 	indexOfMax(arr) {
@@ -161,7 +186,7 @@ export default class Home extends React.Component {
 		console.log('boom')
 		// getting the current data
 		var proxyurl = 'http://localhost:8080/'
-		const response1 = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/entry/' + this.state.id + '/event/46/picks/', {method: 'GET'})
+		const response1 = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/entry/' + this.state.id + '/event/47/picks/', {method: 'GET'})
 		const jsonResponse1 = await response1.json()
 		this.setState({total_points: jsonResponse1.entry_history.total_points, overall_rank: jsonResponse1.entry_history.overall_rank})
 
@@ -200,7 +225,7 @@ export default class Home extends React.Component {
 			}
 		}
 
-		var currentpointshistory = [], currentavgpoints = [], currentrankhistory = []
+		var currentpointshistory = [], currentavgpoints = [], currentgwrankhistory = [], currentoverallrankhistory = []
 
 		for (var i = 0; i < jsonhistorydata.current.length; i++){
 
@@ -249,25 +274,29 @@ export default class Home extends React.Component {
 
 				if(i < 29){
 					this.state.currentpointschart.labels.push(jsonhistorydata.current[i].event)
-					this.state.currentrankchart.labels.push(jsonhistorydata.current[i].event)
+					this.state.currentgwrankchart.labels.push(jsonhistorydata.current[i].event)
+					this.state.currentoverallrankchart.labels.push(jsonhistorydata.current[i].event)
 				} else {
 					this.state.currentpointschart.labels.push(jsonhistorydata.current[i].event - 9)
-					this.state.currentrankchart.labels.push(jsonhistorydata.current[i].event - 9)
+					this.state.currentgwrankchart.labels.push(jsonhistorydata.current[i].event - 9)
+					this.state.currentoverallrankchart.labels.push(jsonhistorydata.current[i].event - 9)
 				}
 				currentpointshistory.push(jsonhistorydata.current[i].points)
-				currentrankhistory.push(jsonhistorydata.current[i].rank)
+				currentgwrankhistory.push(jsonhistorydata.current[i].rank)
+				currentoverallrankhistory.push(jsonhistorydata.current[i].overall_rank)
 			}
 		}
 
 		// populating average scores, change this for final gameweek too
-		for(var b = 0; b < 46; b++){
+		for(var b = 0; b < 47; b++){
 			if(jsonbootstrapdata.events[b].id < 30 || jsonbootstrapdata.events[b].id > 38){
 				currentavgpoints.push(jsonbootstrapdata.events[b].average_entry_score)
 			}
 
 		}
 
-		this.state.currentrankchart.datasets[0].data = currentrankhistory
+		this.state.currentgwrankchart.datasets[0].data = currentgwrankhistory
+		this.state.currentoverallrankchart.datasets[0].data = currentoverallrankhistory
 		this.state.currentpointschart.datasets[0].data = currentpointshistory
 		this.state.currentpointschart.datasets[1].data = currentavgpoints
 
@@ -289,8 +318,6 @@ export default class Home extends React.Component {
 
 		pastpointshistory.push(this.state.total_points)
 		pastrankhistory.push(this.state.overall_rank)
-		this.state.pastpointschart.labels.push("2019/20")
-		this.state.pastrankchart.labels.push("2019/20")
 		this.state.pastpointschart.datasets[0].data = pastpointshistory
 		this.state.pastrankchart.datasets[0].data = pastrankhistory
 
@@ -309,12 +336,12 @@ export default class Home extends React.Component {
 		// earlier we had a problem with k so we missed gw 29 but that's fixed now. disparity between total points and this
 		// is because of deducted points for extra transfers
 		// we still have a one point discrepancy, but i think that's because of update lag, check later
-		// you probably have to update this part to get gameweek 38
-		for (var k = 1; k < 47; k++){
+		for (var k = 1; k < 48; k++){
 			if (k < 30 || k > 38){
 				const response3 = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/entry/' + this.state.id + '/event/' + k + '/picks/', 
 					{method: 'GET'})
 				const jsonResponse3 = await response3.json()
+
 				// crashes when you haven't played the whole season, Soli is missing a GW
 				for (var l = 0; l < jsonResponse3.picks.length; l++){
 					if (jsonResponse3.picks[l].multiplier !== 0){
@@ -380,106 +407,160 @@ export default class Home extends React.Component {
 	}
 
 	render() {
-		if (this.state.doughnut.datasets[0].data.length === 0 && this.state.loading == false){
+		if (this.state.doughnut.datasets[0].data.length === 0 && this.state.loading === false){
 			return(
 				<div className="inputsection">
-					<div>
+					<div className="formstuff">
 						<form className="inputform">
 							<TextInput id="TextInput-4" label="Team ID" onChange={this.handleChange} className="textinput"/>
 	 						<Button type="button" waves="light" onClick={this.getData}>Submit</Button>				
 	  					</form>	
+	  					<br />
+	  					Your team ID is the number in the URL when you view your points page on FPL. <br />
+	  					For example, the URL https://fantasy.premierleague.com/entry/124252/event/47 means your ID is 124252. <br />
+	  					If you just wanted to check out the site, use ID 2612666!
 	  				</div>
 
+
 				</div>
 			);
 
-		} else if (this.state.doughnut.datasets[0].data.length === 0 && this.state.loading == true){
+		} else if (this.state.doughnut.datasets[0].data.length === 0 && this.state.loading === true){
 			return(
 				<div className="inputsection">
-					<BounceLoader size={150} color={"#123abc"} loading={this.state.loading} />
+					<BounceLoader size={150} color={"#123abc"} loading={this.state.loading} /> <br/>
+					<h6>This can take up to a minute, hang on tight!</h6>
 				</div>
 			);
-		}
-
-		else if (this.state.doughnut.datasets[0].data.length > 0){
+		} else if (this.state.doughnut.datasets[0].data.length > 0){
 			return(
-				<div>
+				<div className="home">
+					<Navbar
+						alignLinks="right"
+						className="navbar"
+						brand={<a className="brand-logo" href="#">FPLGraphs</a>}
+						id="mobile-nav"
+						menuIcon={<Icon>menu</Icon>}>
+						<NavItem href="#seasonreview">
+							2019/20
+						</NavItem>
+						<NavItem href="#seasonhistory">
+							Past Seasons
+						</NavItem>
+						<NavItem href="#positiondonut">
+							Points by Position
+						</NavItem>
+					</Navbar>
 					<div className="overview">
-						<h3> Overview </h3>
-						Total points: {this.state.total_points}<br/>
-						Overall Rank: {this.state.overall_rank}<br/>
-						Best Overall Rank: {this.state.best_overall_rank}, obtained in gameweek {this.state.best_overall_rank_gw} <br />
-						Best points in one GW: {this.state.best_points}, obtained in gameweek {this.state.best_points_gw} <br />
-						Highest gameweek rank: {this.state.best_gameweek_rank}, obtained in gameweek {this.state.best_gameweek_rank_gw} <br />
-						You got the most points on your bench in gameweek {this.state.most_bench_points_gw}, a whopping {this.state.most_bench_points} points. Unlucky! <br />
+						<div className="overviewcontent">
+							<h3> Overview </h3>
+							Total points: {this.state.total_points}<br/>
+							Overall Rank: {this.state.overall_rank}<br/>
+							Best Overall Rank: {this.state.best_overall_rank}, obtained in gameweek {this.state.best_overall_rank_gw} <br />
+							Best points in one GW: {this.state.best_points}, obtained in gameweek {this.state.best_points_gw} <br />
+							Highest gameweek rank: {this.state.best_gameweek_rank}, obtained in gameweek {this.state.best_gameweek_rank_gw} <br />
+							You got the most points on your bench in gameweek {this.state.most_bench_points_gw}, a whopping {this.state.most_bench_points} points. Unlucky! <br />
+						</div>
 					</div>
-					<div className="seasonreview">
-						<h3> Season Review </h3>
-				        <Line data={this.state.currentpointschart}
-							options={{
-								title:{
-									display:true,
-									text:'Team Points vs Avg Points/Gameweek',
-									fontSize:20
-								},
-								legend: {
-								display: true						
-								}
-						}} />
-				        <Line data={this.state.currentrankchart}
-							options={{
-								title:{
-									display:true,
-									text:'Rank/Gameweek',
-									fontSize:20
-								},
-								legend: {
-								display: false						
-								}
-						}} />
+					<div className="seasonreview" id="seasonreview">
+						<div className="seasonreviewcontent">
+							<h3> Season Review </h3>
+					        <Line data={this.state.currentpointschart}
+								options={{
+									title:{
+										display:true,
+										text:'Team Points vs Avg Points/Gameweek',
+										fontSize:20
+									},
+									legend: {
+									display: true						
+									}
+							}} />
+					        <Line data={this.state.currentgwrankchart}
+								options={{
+									title:{
+										display:true,
+										text:'GW Rank/GW #',
+										fontSize:20
+									},
+									legend: {
+									display: false						
+									}
+							}} />
+					        <Line data={this.state.currentoverallrankchart}
+								options={{
+									title:{
+										display:true,
+										text:'Overall Rank/GW #',
+										fontSize:20
+									},
+									legend: {
+									display: false						
+									}
+							}} />
+						</div>
 					</div>
-					<div className="seasonhistory">
-						<h3> Team History </h3>
-				        <Line data={this.state.pastpointschart}
-							options={{
-								title:{
-									display:true,
-									text:'Points/Season',
-									fontSize:20
-								},
-								legend: {
-								display: false						
-								}
-						}} />
-				        <Line data={this.state.pastrankchart}
-							options={{
-								title:{
-									display: true,
-									text: 'Rank/Season',
-									fontSize: 20
-								},
-								legend: {
-								display: false						
-								}
-						}}/>
+					<div className="seasonhistory" id="seasonhistory">
+						<div className="seasonhistorycontent">
+							<h3> Team History </h3>
+					        <Line data={this.state.pastpointschart}
+								options={{
+									title:{
+										display:true,
+										text:'Points/Season',
+										fontSize:20
+									},
+									legend: {
+									display: false						
+									}
+							}} />
+					        <Line data={this.state.pastrankchart}
+								options={{
+									title:{
+										display: true,
+										text: 'Overall Rank/Season',
+										fontSize: 20
+									},
+									legend: {
+									display: false						
+									}
+							}}/>
+						</div>
 					</div>
 					<div className="picks">
-						<h3> Player picks </h3>
-						The player with the most appearances was: {this.state.mostpickedplayer}, with {this.state.mostpickedtimes} appearances <br />
-						Most frequently captained: {this.state.mostcaptainedplayer}, {this.state.captainedtimes} times <br />
-						Maximum points by one player: {this.state.maxplayerpoints}, by {this.state.maxplayerpointsname} in gameweek {this.state.maxplayerpointsgw} <br />
+						<div className="pickscontent">
+							<h3> Player picks </h3>
+							The player with the most appearances was: {this.state.mostpickedplayer}, with {this.state.mostpickedtimes} appearances <br />
+							Most frequently captained: {this.state.mostcaptainedplayer}, {this.state.captainedtimes} times <br />
+							Maximum points by one player: {this.state.maxplayerpoints}, by {this.state.maxplayerpointsname} in gameweek {this.state.maxplayerpointsgw}
+						</div>
 					</div>
-					<div className="positiondonut">
-						<h3> Points by Position</h3>
-						<Doughnut data={this.state.doughnut} />
+					<div className="positiondonut" id="positiondonut">
+						<div className="positiondonutcontent">
+							<h3> Points by Position</h3>
+							<Doughnut className ="doughnut" data={this.state.doughnut} 
+								options={{
+									legend: {
+										display: true
+									}
+								}}/>
+						</div>
 					</div>
 					<div className="chips">
-						<h3> Chips </h3>
-						You used your wildcard in gameweek(s) {this.state.wildcardgw}, and got {this.state.wildcardpoints} points. <br />
-						You used your free hit in gameweek {this.state.freehitgw}, and got {this.state.freehitpoints} points. <br />
-						You used your bench boost in gameweek {this.state.benchboostgw}, and got {this.state.benchboostpoints} points.<br />
-						You used your triple captain in gameweek {this.state.triplecapgw}, and got {this.state.triplecappoints} points. <br />
+						<div className="chipscontent">
+							<h3> Chips </h3>
+							You used your wildcard in gameweek(s) {this.printString(this.state.wildcardgw)}, and got {this.printString(this.state.wildcardpoints)} points respectively. <br />
+							You used your free hit in gameweek {this.state.freehitgw}, and got {this.state.freehitpoints} points. <br />
+							You used your bench boost in gameweek {this.state.benchboostgw}, and got {this.state.benchboostpoints} points.<br />
+							You used your triple captain in gameweek {this.state.triplecapgw}, and got {this.state.triplecappoints} points. <br />
+						</div>
 					</div>
+					<Footer className="footer">
+						<p className="grey-text text-lighten-4">
+							Email me at fplgraphs@gmail.com to give me feedback!
+							Copyright 2020, TA.
+						</p>
+					</Footer>
 				</div>
 			);
 		}
