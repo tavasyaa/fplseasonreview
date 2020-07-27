@@ -3,11 +3,11 @@
 
 Review your FPL season with this website, and see stats that the officials don't show you!  
 
-### Check it out
+### Check it out!
 I've uploaded a demo video to the repository so you can check out what the app does without running it yourself (or if the FPL guys change the database format and do me dirty).  
 
 ### Setup
-Install NodeJS on your machine, and then clone this repository. You can then navigate to it using the command line on your machine, and run 'npm install' to install all dependencies required. npm start should then run the app!   
+Install NodeJS on your machine, and then clone this repository. You can then navigate to it using the command line on your machine, and run 'npm install' to install all dependencies required. 'npm start' should then run the app!   
 
 If this doesn't work, try running your own CORS proxy, more information can be found here: https://github.com/Rob--W/cors-anywhere/
 
