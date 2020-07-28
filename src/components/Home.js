@@ -183,7 +183,6 @@ export default class Home extends React.Component {
 	// fetching data, fix the localhost thing to use the heroku app when you launch this
 	getData = async() => {
 		this.setState({loading: true})
-		console.log('boom')
 		// getting the current data
 		var proxyurl = 'https://corsforfplretro.herokuapp.com/'
 		const response1 = await fetch(proxyurl + 'https://fantasy.premierleague.com/api/entry/' + this.state.id + '/event/47/picks/', {method: 'GET'})
